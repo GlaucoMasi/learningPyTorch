@@ -2,4 +2,4 @@ venv/
 __pycache__/
 
 data/
-models/
+trained_models/
