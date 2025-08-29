@@ -6,8 +6,8 @@ def eval_model(model: nn.Module,
                dataloader: torch.utils.data.DataLoader,
                loss_fn: nn.Module,
                accuracy_fn,
-               start = 0,
-               end = 0):
+               start: float=0,
+               end: float=0):
     
     loss, acc = 0, 0
     with torch.inference_mode():
