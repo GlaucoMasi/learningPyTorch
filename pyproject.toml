@@ -16,6 +16,12 @@ dependencies = [
     "torchinfo",
     "Pillow",
     "ipykernel",
+    "ipywidgets",
+    "tensorboard",
+    "torch-tb-profiler",
+    "pandas",
+    "pytz",
+    "tzdata",
 ]
 
 [tool.setuptools.packages.find]

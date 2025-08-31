@@ -2,6 +2,7 @@
 Module for creating PyTorch DataLoaders for image classification data
 """
 import os
+import torch
 from pathlib import Path
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -40,7 +41,7 @@ def create_dataloaders(
         batch_size=batch_size,
         num_workers=num_workers,
         shuffle=True,
-        pin_memory=True
+        pin_memory=torch.cuda.is_available()
     )
 
     test_dataloader = DataLoader(
@@ -48,7 +49,7 @@ def create_dataloaders(
         batch_size=batch_size,
         num_workers=num_workers,
         shuffle=False,
-        pin_memory=True
+        pin_memory=torch.cuda.is_available()
     )
 
     return train_dataloader, test_dataloader, class_names

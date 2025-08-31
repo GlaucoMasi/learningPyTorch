@@ -3,6 +3,7 @@ Module contains functions to train and test a PyTorch model
 """
 import torch
 from torch import nn
+from torch.utils.tensorboard import SummaryWriter
 
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple
@@ -12,7 +13,7 @@ def train_step(
     dataloader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     optimizer: torch.optim.Optimizer,
-    device: torch.device
+    device: torch.device,
 ) -> Tuple[float, float]:
     """Performs a single training step on a PyTorch model
 
@@ -26,6 +27,7 @@ def train_step(
     Returns:
         A tuple of training loss and accuracy, in the form (train_loss, train_accuracy).
     """
+
     model.train()
     train_loss, train_acc = 0, 0
 
@@ -92,7 +94,8 @@ def train(
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
     device: torch.device=torch.device("cpu"),
-    epochs: int=5
+    epochs: int=5,
+    writer: SummaryWriter=None
 ) -> Dict[str, List]:
     """Train and tests a PyTorch model
 
@@ -108,6 +111,7 @@ def train(
         scheduler: PyTorch learning rate scheduler for the optimizer, not mandatory
         device: Target device to compute on (default is "cpu")
         epochs: Number of epochs for the training (default is 5)
+        writer: A SummaryWriter can be given to the function to be reasured
 
     Returns:
         A dictionary of training and testing loss and training and testing accuracy for each epoch.
@@ -116,6 +120,10 @@ def train(
                     test_loss: [...],
                     test_acc: [...]}
     """
+    new_writer = writer is None
+    if(new_writer):
+        writer = SummaryWriter()
+
     results = {
         "train_loss": [],
         "train_acc": [],
@@ -142,5 +150,22 @@ def train(
         results["train_acc"].append(train_acc)
         results["test_loss"].append(test_loss)
         results["test_acc"].append(test_acc)
+
+        writer.add_scalars(
+            main_tag="Loss",
+            tag_scalar_dict={"train_loss": train_loss, "test_loss": test_loss},
+            global_step=epoch
+        )
+
+        writer.add_scalars(
+            main_tag="Accuracy",
+            tag_scalar_dict={"train_acc": train_acc, "test_acc": test_acc},
+            global_step=epoch
+        )
+
+        writer.add_graph(model=model, input_to_model=torch.randn(32, 3, 224, 224).to(device))
+
+    if new_writer:
+        writer.close()
 
     return results

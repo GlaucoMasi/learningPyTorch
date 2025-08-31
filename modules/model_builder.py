@@ -2,7 +2,9 @@
 Module to instantiate a TinyVGG PyTorch model
 """
 import torch
+import torchvision
 from torch import nn
+from torchinfo import summary
 
 class TinyVGG(nn.Module):
     """Creates the TinyVGG architecture
@@ -50,3 +52,37 @@ class TinyVGG(nn.Module):
 
     def forward(self, x: torch.Tensor):
         return self.classifier(self.conv_block_2(self.conv_block_1(x)))
+
+def create_effnetb0(out_features: int, device: torch.device, print_summary: bool=False):
+    weights = torchvision.models.EfficientNet_B0_Weights.DEFAULT
+    model = torchvision.models.efficientnet_b0(weights=weights).to(device)
+
+    for param in model.features.parameters():
+        param.requires_grad = False
+
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=0.2),
+        nn.Linear(in_features=1280, out_features=out_features, bias=True)
+    ).to(device)
+
+    model.name = "effnetb0"
+    if(print_summary):
+        summary(model)
+    return model
+
+def create_effnetb2(out_features: int, device: torch.device, print_summary: bool=False):
+    weights = torchvision.models.EfficientNet_B2_Weights.DEFAULT
+    model = torchvision.models.efficientnet_b2(weights=weights).to(device)
+
+    for param in model.features.parameters():
+        param.requires_grad = False
+
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=0.3),
+        nn.Linear(in_features=1408, out_features=out_features, bias=True)
+    ).to(device)
+
+    model.name = "effnetb2"
+    if(print_summary):
+        summary(model)
+    return model
