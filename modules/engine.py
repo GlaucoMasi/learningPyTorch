@@ -163,7 +163,9 @@ def train(
             global_step=epoch
         )
 
-        writer.add_graph(model=model, input_to_model=torch.randn(32, 3, 224, 224).to(device))
+        # Caused problems with non-deterministic graphs
+        # model.eval()
+        # writer.add_graph(model=model, input_to_model=torch.randn(32, 3, 224, 224).to(device), use_strict_trace=False)
 
     if new_writer:
         writer.close()
