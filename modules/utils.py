@@ -11,9 +11,11 @@ import torchvision
 from PIL import Image
 from pathlib import Path
 from datetime import datetime
-from typing import List, Tuple
 import matplotlib.pyplot as plt
 from torchvision import transforms
+from typing import Dict, List, Tuple
+from safetensors.torch import save_file
+from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter 
 
 def save_model(
@@ -35,7 +37,25 @@ def save_model(
     model_save_path = models_dir / model_name
 
     print(f"Saving model to: {model_save_path}")
-    torch.save(obj=model.state_dict(), f=model_save_path)
+    torch.save(obj=model.state_dict(), f=model_save_path, _use_new_zipfile_serialization=True)
+
+    model_size = model_save_path.stat().st_size // (1024*1024)
+    return model_size
+
+def save_model_with_savetensors(
+    model: torch.nn.Module,
+    model_name: str 
+):
+    venv_dir = Path(sys.prefix)
+    project_root = venv_dir.parent
+    models_dir = project_root/"trained_models"
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    assert model_name.endswith(".pth") or model_name.endswith(".safetensors"), "model_name doesn't follow naming convention"
+    model_save_path = models_dir / model_name
+
+    sd = {k: v.cpu() for k, v in model.state_dict().items()}
+    save_file(sd, model_save_path)
 
 def download_data(
     source: str,
@@ -147,3 +167,69 @@ def pred_and_plot_images(
             image_size=image_size,
             transform=transform
         )
+
+def plot_loss_curves(results: Dict[str, List[float]]):
+    loss = results["train_loss"]
+    test_loss = results["test_loss"]
+
+    accuracy = results["train_acc"]
+    test_accuracy = results["test_acc"]
+
+    epochs = range(len(loss))
+
+    plt.figure(figsize=(15, 7))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, loss, label="train_loss")
+    plt.plot(epochs, test_loss, label="test_loss")
+    plt.title("Loss")
+    plt.xlabel("Epochs")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, accuracy, label="train_accuracy")
+    plt.plot(epochs, test_accuracy, label="test_accuracy")
+    plt.title("Accuracy")
+    plt.xlabel("Epochs")
+    plt.legend()
+
+def pred_and_store(
+    model: torch.nn.Module,
+    paths: List[Path],
+    transform: torchvision.transforms,
+    class_names: List[str],
+    device = torch.device
+) -> List[Dict]:
+    pred_list = []
+
+    for path in paths:
+        pred_dict = {}
+
+        pred_dict["image_path"] = path
+        class_name = path.parent.stem
+        pred_dict["class_name"] = class_name
+
+        start_time = timer()
+        
+        img = Image.open(path)
+        transformed_image = transform(img).unsqueeze(dim=0).to(device)
+
+        model.to(device)
+        model.eval()
+
+        with torch.inference_mode():
+            pred_logit = model(transformed_image)
+            pred_prob = torch.softmax(pred_logit, dim=1)
+            pred_label = torch.argmax(pred_prob, dim=1)
+            pred_class = class_names[pred_label.cpu()]
+
+            pred_dict["pred_prob"] = pred_prob
+            pred_dict["pred_class"] = pred_class
+
+            end_time = timer()
+            pred_dict["time_for_pred"] = round(end_time-start_time, 4)
+
+        pred_dict["correct"] = class_name == pred_class
+        pred_list.append(pred_dict)
+
+    return pred_list

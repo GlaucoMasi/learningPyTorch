@@ -18,10 +18,12 @@ dependencies = [
     "ipykernel",
     "ipywidgets",
     "tensorboard",
-    "torch-tb-profiler",
+    "torch-tb-profiler","
     "pandas",
     "pytz",
     "tzdata",
+    "gradio",
+    "safetensors"
 ]
 
 [tool.setuptools.packages.find]

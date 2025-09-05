@@ -68,7 +68,7 @@ def create_effnetb0(out_features: int, device: torch.device, print_summary: bool
     model.name = "effnetb0"
     if(print_summary):
         summary(model)
-    return model
+    return model, weights.transforms()
 
 def create_effnetb2(out_features: int, device: torch.device, print_summary: bool=False):
     weights = torchvision.models.EfficientNet_B2_Weights.DEFAULT
@@ -85,4 +85,4 @@ def create_effnetb2(out_features: int, device: torch.device, print_summary: bool
     model.name = "effnetb2"
     if(print_summary):
         summary(model)
-    return model
+    return model, weights.transforms()
