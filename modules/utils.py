@@ -54,6 +54,7 @@ def save_model_with_savetensors(
     assert model_name.endswith(".pth") or model_name.endswith(".safetensors"), "model_name doesn't follow naming convention"
     model_save_path = models_dir / model_name
 
+    print(f"Saving model to: {model_save_path}")
     sd = {k: v.cpu() for k, v in model.state_dict().items()}
     save_file(sd, model_save_path)
 
@@ -196,7 +197,7 @@ def plot_loss_curves(results: Dict[str, List[float]]):
 def pred_and_store(
     model: torch.nn.Module,
     paths: List[Path],
-    transform: torchvision.transforms,
+    transforms: torchvision.transforms,
     class_names: List[str],
     device = torch.device
 ) -> List[Dict]:
@@ -212,7 +213,7 @@ def pred_and_store(
         start_time = timer()
         
         img = Image.open(path)
-        transformed_image = transform(img).unsqueeze(dim=0).to(device)
+        transformed_image = transforms(img).unsqueeze(dim=0).to(device)
 
         model.to(device)
         model.eval()
